@@ -10,7 +10,7 @@ const CATEGORIES = [
     name: 'Epoxy & Crystal Magnets',
     tier: 'Premium Finish',
     desc: 'Crystal-clear epoxy and dome-finish magnetic products developed for premium souvenir, gift and branded retail collections.',
-    count: 0,
+    count: 4,
     color: 'c-orange'
   },
   {
@@ -26,7 +26,7 @@ const CATEGORIES = [
     name: 'Acrylic Magnets',
     tier: 'Premium Finish',
     desc: 'High-definition printed and CNC-finished acrylic magnets for premium souvenir and branded retail collections.',
-    count: 1,
+    count: 4,
     color: 'c-soft'
   },
   {
@@ -49,7 +49,7 @@ const CATEGORIES = [
     slug: 'all',
     name: 'All Products',
     desc: 'Explore custom magnetic products across five material and manufacturing-process series.',
-    count: 9,
+    count: 16,
     color: 'c-cream'
   }
 ];
@@ -228,7 +228,7 @@ const PRODUCTS = [
     slug: 'mag-001-custom-pvc-mascot-magnet',
     sku: 'MAG-001',
     name: 'Custom 3D Soft PVC Magnets',
-    category: '3d-magnets',
+    category: '3d-resin-tinplate-magnets',
     badge: 'BEST SELLER',
     app_badge: 'Mascot',
     tagline: 'Precision-molded 3D relief magnets designed to accurately replicate brand mascots and architectural landmarks for promotion.',
