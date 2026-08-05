@@ -16,9 +16,20 @@ export async function onRequestPost({ request, env }) {
     headers: { Accept: 'application/json' }
   });
 
-  const body = await response.text();
-  return new Response(body, {
-    status: response.status,
-    headers: { 'Content-Type': 'application/json; charset=utf-8' }
-  });
+  const rawBody = await response.text();
+  let upstream = {};
+  try {
+    upstream = rawBody ? JSON.parse(rawBody) : {};
+  } catch {
+    upstream = {};
+  }
+
+  const upstreamSuccess = upstream.success === true || upstream.success === 'true';
+  const success = response.ok && (upstreamSuccess || !Object.prototype.hasOwnProperty.call(upstream, 'success'));
+  const message = upstream.message || (success ? 'Inquiry submitted successfully' : 'Inquiry submission failed');
+
+  return Response.json({
+    success,
+    message
+  }, { status: success ? 200 : (response.status || 502) });
 }
