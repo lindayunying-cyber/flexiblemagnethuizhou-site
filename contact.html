@@ -17,6 +17,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/img/logo.png">
 <link rel="stylesheet" href="assets/css/style.css">
+<script src="assets/js/analytics.js" defer></script>
 </head>
 <body>
 
@@ -70,12 +71,9 @@
 <!-- Quote Form -->
 <section class="quote-form-section">
   <div class="container">
-    <div class="form-success" id="formSuccess" style="display:none;">
-      <strong>✓ Your email app should be opening now.</strong><br>
-      If nothing happened, please email us directly at <strong>sales08@flexiblemagnetchina.com</strong>.
-    </div>
+    <div class="form-success" id="formSuccess" style="display:none;" role="status" aria-live="polite"></div>
 
-    <form id="inquiryForm" class="quote-form">
+    <form id="inquiryForm" class="quote-form" data-submit-endpoint="/api/inquiry" novalidate>
 
       <!-- Row 1: Name + Company -->
       <div class="qf-row">
@@ -289,18 +287,6 @@ function handleFileSelect(input){
   const name=input.files[0]?input.files[0].name:'No file selected';
   document.getElementById('qfFileName').textContent=name;
 }
-// Form submit → mailto
-document.getElementById('inquiryForm').addEventListener('submit',function(e){
-  e.preventDefault();
-  const f=e.target;
-  const fd=new FormData(f);
-  const lines=[];
-  fd.forEach((v,k)=>{if(k!=='attachment'&&v)lines.push(k.toUpperCase().replace(/_/g,' ')+': '+v);});
-  const body=encodeURIComponent('Hi Lucy,\n\nI would like a custom magnet quote with the following details:\n\n'+lines.join('\n')+'\n\nLooking forward to your reply.\n\nThanks');
-  const subject=encodeURIComponent('Magnet Quote Request — '+(fd.get('name')||'New Inquiry'));
-  window.location.href='mailto:sales08@flexiblemagnetchina.com?subject='+subject+'&body='+body;
-  document.getElementById('formSuccess').style.display='block';
-});
 </script>
 <script src="assets/js/products.js"></script>
 <script src="assets/js/main.js"></script>

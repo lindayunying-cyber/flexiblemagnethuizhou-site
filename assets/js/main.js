@@ -176,11 +176,6 @@ function renderProductDetail() {
     </div>
   `).join('');
 
-  // Build inquiry mailto
-  const mailSubject = encodeURIComponent(`Inquiry: ${p.sku} ${p.name}`);
-  const mailBody = encodeURIComponent(`Hi Flexible Magnet (Huizhou) team,\n\nI'm interested in the following product:\n\nSKU: ${p.sku}\nName: ${p.name}\nLink: ${window.location.href}\n\nPlease send me:\n- Detailed quote for ___ pcs\n- Sample availability and cost\n- Lead time and shipping options\n\nMy company: \nMy market: \nMy target launch: \n\nThanks!`);
-  const mailto = `mailto:sales08@flexiblemagnetchina.com?subject=${mailSubject}&body=${mailBody}`;
-
   wrap.innerHTML = `
     <div class="container">
       <div class="breadcrumb">
@@ -223,8 +218,8 @@ function renderProductDetail() {
             </div>
           </div>
           <div class="pd-actions">
-            <a href="${mailto}" class="btn btn-primary btn-arrow">Email Inquiry</a>
-            <a href="contact.html" class="btn btn-outline">Request Quote Form</a>
+            <a href="contact.html?p=${encodeURIComponent(p.slug)}" class="btn btn-primary btn-arrow">Request Quote</a>
+            <a href="https://wa.me/8613129581959?text=${encodeURIComponent(`Hi, I would like a quote for ${p.name}.`)}" class="btn btn-outline" target="_blank" rel="noopener">WhatsApp</a>
           </div>
           <div class="pd-specs">
             <h3>Specifications</h3>
@@ -261,50 +256,77 @@ function renderProductDetail() {
   });
 }
 
-// ----- Inquiry form (mailto submit) -----
+// ----- Inquiry form (secure async submit) -----
 function setupInquiryForm() {
   const form = document.getElementById('inquiryForm');
-  if (!form) return;
+  if (!form || form.dataset.bound === 'true') return;
+  form.dataset.bound = 'true';
 
-  // Pre-fill product if coming from product page
-  const prodSlug = getQuery('p');
-  if (prodSlug) {
-    const p = getProduct(prodSlug);
-    if (p) {
-      const prodField = form.querySelector('[name="product"]');
-      if (prodField) prodField.value = `${p.sku} ${p.name}`;
-    }
+  const productSlug = getQuery('p');
+  if (productSlug) {
+    const product = getProduct(productSlug);
+    const productField = form.querySelector('[name="product_type"]');
+    if (product && productField && !productField.value) productField.value = product.name;
   }
 
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const fd = new FormData(form);
-    const subject = `New Inquiry from ${fd.get('name')} (${fd.get('company') || 'no company'})`;
-    const lines = [
-      `Name: ${fd.get('name')}`,
-      `Company: ${fd.get('company') || '-'}`,
-      `Email: ${fd.get('email')}`,
-      `Phone / WhatsApp: ${fd.get('phone') || '-'}`,
-      `Country: ${fd.get('country') || '-'}`,
-      ``,
-      `Product Interest: ${fd.get('product') || '-'}`,
-      `Quantity: ${fd.get('quantity') || '-'}`,
-      `Target Price (USD/pc): ${fd.get('price') || '-'}`,
-      `Target Launch Date: ${fd.get('launch') || '-'}`,
-      ``,
-      `Message:`,
-      fd.get('message') || '-'
-    ];
-    const body = lines.join('\n');
-    const mailto = `mailto:sales08@flexiblemagnetchina.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailto;
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!form.reportValidity()) return;
 
-    // Show confirmation
+    const submitButton = form.querySelector('button[type="submit"]');
     const success = document.getElementById('formSuccess');
-    if (success) {
-      success.classList.add('show');
-      success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const endpoint = form.dataset.submitEndpoint || '/api/inquiry';
+
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.dataset.originalText = submitButton.textContent;
+      submitButton.textContent = 'SENDING...';
     }
+    if (success) {
+      success.style.display = 'block';
+      success.className = 'form-success';
+      success.textContent = 'Sending your project brief...';
+    }
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { Accept: 'application/json' }
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.message || 'Submission failed');
+      form.reset();
+      const fileName = document.getElementById('qfFileName');
+      if (fileName) fileName.textContent = 'No file selected';
+      if (success) {
+        success.className = 'form-success show';
+        success.innerHTML = '<strong>Thank you — your project brief has been sent.</strong><br>Our team will review your requirements and reply by email.';
+        success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      if (typeof gtag === 'function') gtag('event', 'inquiry_form_submit');
+    } catch (error) {
+      if (success) {
+        success.className = 'form-success show form-error';
+        success.innerHTML = '<strong>We could not send the form.</strong><br>Please email <a href="mailto:sales08@flexiblemagnetchina.com">sales08@flexiblemagnetchina.com</a> or contact us on WhatsApp.';
+        success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    } finally {
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = submitButton.dataset.originalText || 'SEND PROJECT BRIEF';
+      }
+    }
+  });
+}
+
+function setupAnalyticsEvents() {
+  document.addEventListener('click', (event) => {
+    const link = event.target.closest('a');
+    if (!link || typeof gtag !== 'function') return;
+    if (link.href.startsWith('https://wa.me/')) gtag('event', 'whatsapp_click');
+    if (link.href.startsWith('mailto:')) gtag('event', 'email_click');
+    if (link.classList.contains('btn-quote')) gtag('event', 'request_quote_click');
   });
 }
 
@@ -313,6 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('productGrid')) renderProductsPage();
   if (document.getElementById('pdWrap')) renderProductDetail();
   if (document.getElementById('inquiryForm')) setupInquiryForm();
+  setupAnalyticsEvents();
 });
 
 // ----- WhatsApp Floating Button (auto-inject on every page) -----
