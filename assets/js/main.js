@@ -116,14 +116,22 @@ function renderProductsPage() {
   const currentCat = getQuery('cat') || 'all';
   const currentSub = getQuery('sub') || '';
 
-  // Update page header by main category
-  const catObj = getCategory(currentCat);
-  if (titleEl && catObj && currentCat !== 'all') {
-    titleEl.textContent = catObj.name;
+  // Update page header and SEO metadata by customer-facing category.
+  const catObj = getCategory(currentCat) || getCategory('all');
+  if (titleEl && catObj) {
+    titleEl.textContent = catObj.seoH1 || catObj.name;
     if (descEl) descEl.textContent = catObj.desc;
-  } else if (titleEl) {
-    titleEl.textContent = 'All Products';
-    if (descEl) descEl.textContent = 'Browse custom magnetic products across five material and manufacturing-process series, from flat printed magnets to dimensional resin collections.';
+    document.title = catObj.seoTitle || `${catObj.name} | Flexible Magnet (Huizhou)`;
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription && catObj.seoDescription) metaDescription.setAttribute('content', catObj.seoDescription);
+    const canonical = document.querySelector('link[rel="canonical"]');
+    if (canonical) canonical.setAttribute('href', `${window.location.origin}${window.location.pathname}${currentCat !== 'all' ? `?cat=${encodeURIComponent(currentCat)}` : ''}`);
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute('content', catObj.seoTitle || catObj.name);
+    const ogDescription = document.querySelector('meta[property="og:description"]');
+    if (ogDescription && catObj.seoDescription) ogDescription.setAttribute('content', catObj.seoDescription);
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    if (ogUrl) ogUrl.setAttribute('content', `${window.location.origin}${window.location.pathname}${currentCat !== 'all' ? `?cat=${encodeURIComponent(currentCat)}` : ''}`);
   }
 
   // Top chips: product series plus All Products
@@ -157,7 +165,22 @@ function renderProductDetail() {
     return;
   }
 
-  const breadcrumbCat = getCategory(p.category);
+  // Set product-detail SEO metadata after resolving the query parameter.
+  const category = getCategory(p.category);
+  document.title = `${p.name} | Custom ${category ? category.name : 'Magnetic Products'} | Flexible Magnet (Huizhou)`;
+  const detailDescription = `Request a factory-direct quote for ${p.name}. Custom manufacturing, OEM support and clear MOQ, lead time and customization options.`;
+  const metaDescription = document.querySelector('meta[name="description"]');
+  if (metaDescription) metaDescription.setAttribute('content', detailDescription);
+  const canonical = document.querySelector('link[rel="canonical"]');
+  if (canonical) canonical.setAttribute('href', `${window.location.origin}${window.location.pathname}?p=${encodeURIComponent(p.slug)}`);
+  const ogTitle = document.querySelector('meta[property="og:title"]');
+  if (ogTitle) ogTitle.setAttribute('content', document.title);
+  const ogDescription = document.querySelector('meta[property="og:description"]');
+  if (ogDescription) ogDescription.setAttribute('content', detailDescription);
+  const ogUrl = document.querySelector('meta[property="og:url"]');
+  if (ogUrl) ogUrl.setAttribute('content', canonical ? canonical.href : window.location.href);
+
+  const breadcrumbCat = category;
   const tiersHTML = p.tiers.map((t, i) => `
     <div class="pd-tier ${i === 1 ? 'recommended' : ''}">
       <div class="qty">${t.qty}</div>
@@ -320,6 +343,23 @@ function setupInquiryForm() {
   });
 }
 
+function setupExhibitionLightbox() {
+  const lightbox = document.getElementById('exhibitionLightbox');
+  if (!lightbox) return;
+  const preview = lightbox.querySelector('img');
+  const close = () => lightbox.classList.remove('is-open');
+  document.querySelectorAll('.exhibition-image-button').forEach((button) => {
+    button.addEventListener('click', () => {
+      preview.src = button.dataset.image;
+      preview.alt = button.dataset.alt || '';
+      lightbox.classList.add('is-open');
+    });
+  });
+  lightbox.querySelector('.exhibition-lightbox-close').addEventListener('click', close);
+  lightbox.addEventListener('click', (event) => { if (event.target === lightbox) close(); });
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') close(); });
+}
+
 function setupAnalyticsEvents() {
   document.addEventListener('click', (event) => {
     const link = event.target.closest('a');
@@ -336,6 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('pdWrap')) renderProductDetail();
   if (document.getElementById('inquiryForm')) setupInquiryForm();
   setupAnalyticsEvents();
+  setupExhibitionLightbox();
 });
 
 // ----- WhatsApp Floating Button (auto-inject on every page) -----
