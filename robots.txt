@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://flexiblemagnethuizhou.com/sitemap.xml
+Sitemap: https://www.flexiblemagnethuizhou.com/sitemap.xml
