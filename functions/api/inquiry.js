@@ -27,7 +27,8 @@ function validateFormData(formData) {
   }
 
   const attachment = formData.get('attachment');
-  if (attachment instanceof File && attachment.size > 10 * 1024 * 1024) {
+  const hasFile = attachment && typeof attachment !== 'string' && typeof attachment.size === 'number';
+  if (hasFile && attachment.size > 10 * 1024 * 1024) {
     return 'The attachment must not exceed 10 MB.';
   }
 
