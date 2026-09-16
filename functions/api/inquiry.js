@@ -58,13 +58,26 @@ async function handlePost(request, env) {
   formData.set('subject', fieldValue(formData, 'subject') || 'New Flexible Magnet Website Inquiry');
   formData.set('from_name', fieldValue(formData, 'from_name') || 'Flexible Magnet Website');
 
+  const attachment = formData.get('attachment');
+  const hasAttachment = attachment && typeof attachment !== 'string' && attachment.size > 0;
+  const requestOptions = hasAttachment
+    ? {
+        method: 'POST',
+        body: formData,
+        headers: { Accept: 'application/json' }
+      }
+    : {
+        method: 'POST',
+        body: JSON.stringify(Object.fromEntries(formData.entries())),
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        }
+      };
+
   let response;
   try {
-    response = await fetch('https://api.web3forms.com/submit', {
-      method: 'POST',
-      body: formData,
-      headers: { Accept: 'application/json' }
-    });
+    response = await fetch('https://api.web3forms.com/submit', requestOptions);
   } catch {
     console.error('Inquiry submission failed: Web3Forms request error.');
     return jsonResponse({ success: false, message: 'Inquiry service is temporarily unavailable.' }, 502);
@@ -78,16 +91,21 @@ async function handlePost(request, env) {
     return jsonResponse({ success: false, message: 'Inquiry service returned an invalid response.' }, 502);
   }
 
-  let upstream = {};
+  let upstream = null;
   try {
-    upstream = rawBody ? JSON.parse(rawBody) : {};
+    upstream = rawBody ? JSON.parse(rawBody) : null;
   } catch {
-    console.error(`Inquiry submission failed: invalid Web3Forms response (${response.status}).`);
-    return jsonResponse({ success: false, message: 'Inquiry service returned an invalid response.' }, 502);
+    upstream = null;
   }
 
-  const success = response.ok && upstream && (upstream.success === true || upstream.success === 'true');
+  const jsonSuccess = upstream && (upstream.success === true || upstream.success === 'true');
+  const redirectSuccess = response.redirected && response.url === 'https://api.web3forms.com/submit/success';
+  const success = response.ok && (jsonSuccess || redirectSuccess);
   if (!success) {
+    if (!upstream) {
+      console.error(`Inquiry submission failed: invalid Web3Forms response (${response.status}).`);
+      return jsonResponse({ success: false, message: 'Inquiry service returned an invalid response.' }, 502);
+    }
     const status = response.status >= 400 && response.status <= 599 ? response.status : 502;
     console.error(`Inquiry submission rejected by Web3Forms (${status}).`);
     return jsonResponse({ success: false, message: 'Inquiry submission was not accepted.' }, status);
