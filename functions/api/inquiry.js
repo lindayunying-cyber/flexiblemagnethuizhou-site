@@ -70,15 +70,23 @@ async function handlePost(request, env) {
     return jsonResponse({ success: false, message: 'Inquiry service is temporarily unavailable.' }, 502);
   }
 
-  let upstream;
+  let rawBody;
   try {
-    upstream = await response.json();
+    rawBody = await response.text();
+  } catch {
+    console.error(`Inquiry submission failed: unreadable Web3Forms response (${response.status}).`);
+    return jsonResponse({ success: false, message: 'Inquiry service returned an invalid response.' }, 502);
+  }
+
+  let upstream = {};
+  try {
+    upstream = rawBody ? JSON.parse(rawBody) : {};
   } catch {
     console.error(`Inquiry submission failed: invalid Web3Forms response (${response.status}).`);
     return jsonResponse({ success: false, message: 'Inquiry service returned an invalid response.' }, 502);
   }
 
-  const success = response.ok && (upstream.success === true || upstream.success === 'true');
+  const success = response.ok && upstream && (upstream.success === true || upstream.success === 'true');
   if (!success) {
     const status = response.status >= 400 && response.status <= 599 ? response.status : 502;
     console.error(`Inquiry submission rejected by Web3Forms (${status}).`);
@@ -90,13 +98,20 @@ async function handlePost(request, env) {
 }
 
 export async function onRequest({ request, env }) {
-  if (request.method !== 'POST') {
-    return jsonResponse(
-      { success: false, message: 'Method not allowed. Use POST.' },
-      405,
-      { Allow: 'POST' }
-    );
-  }
+  try {
+    if (request.method !== 'POST') {
+      return jsonResponse(
+        { success: false, message: 'Method not allowed. Use POST.' },
+        405,
+        { Allow: 'POST' }
+      );
+    }
 
-  return handlePost(request, env);
+    return await handlePost(request, env);
+  } catch (error) {
+    const errorName = error && typeof error.name === 'string' ? error.name : 'Error';
+    const errorMessage = error && typeof error.message === 'string' ? error.message : 'Unknown runtime error';
+    console.error(`Inquiry submission failed: unexpected ${errorName}: ${errorMessage}`);
+    return jsonResponse({ success: false, message: 'Inquiry service is temporarily unavailable.' }, 500);
+  }
 }
