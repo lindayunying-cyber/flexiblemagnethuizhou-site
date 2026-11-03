@@ -248,7 +248,7 @@ function productCardHTML(p) {
   const badge = p.badge ? `<div class="product-card-badge">${p.badge}</div>` : '';
   
   // Extracting Metadata (Strict 3-Column Standard: MOQ, Lead Time, Customization)
-  const moqVal = p.specs && p.specs['MOQ'] ? p.specs['MOQ'] : `${p.moq}+ Pcs`;
+  const moqVal = p.specs && p.specs['MOQ'] ? p.specs['MOQ'] : `${p.moq} pcs/sets per design`;
   const leadTime = p.specs && p.specs['Bulk Production'] ? p.specs['Bulk Production'] : '15–30 calendar days';
   const customVal = p.listingCustomization
     || (p.specs && p.specs['Customization'] ? p.specs['Customization'] : 'Custom Design');
@@ -1203,7 +1203,7 @@ async function renderProductDetail() {
   syncProductStructuredData(p, canonicalPath, primaryGalleryImage, isIndexableProduct);
 
   const productSpecs = p.specs || {};
-  const productMoq = productSpecs.MOQ || '200 pcs/sets total';
+  const productMoq = productSpecs.MOQ || '500 pcs/sets per design';
   const productSampling = productSpecs['Physical Sampling'] || '7–10 calendar days';
   const productBulk = productSpecs['Bulk Production'] || '15–30 calendar days';
   const procurement = [
@@ -1220,8 +1220,8 @@ async function renderProductDetail() {
         <p class="pd-payment-note"><strong>Payment:</strong> ${productSpecs.Payment || 'Payment terms are confirmed according to order value and project requirements.'}</p>
       </div>`;
   const projectStandards = p.projectStandards || {
-    'MOQ': '200 pcs/sets total per product construction and manufacturing process',
-    'Multi-design': 'Multiple designs may be combined, subject to project review',
+    'MOQ': '500 pcs/sets per design',
+    'Multi-design': 'Each design requires at least 500 pcs/sets; quantities across designs cannot be combined to meet the MOQ.',
     'Physical Sampling': productSampling,
     'Bulk Production': productBulk,
     'Testing & Documentation': typeof COMPLIANCE_NOTE !== 'undefined'

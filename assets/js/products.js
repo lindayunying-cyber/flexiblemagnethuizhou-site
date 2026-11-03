@@ -114,10 +114,10 @@ const CATEGORIES = [
 ];
 
 const STANDARD_SPECS = {
-  'MOQ': '200 pcs/sets total',
+  'MOQ': '500 pcs/sets per design',
   'Physical Sampling': '7–10 calendar days',
   'Bulk Production': '15–20 calendar days',
-  'Designs': 'Multi-design supported'
+  'Designs': 'Minimum 500 pcs/sets per design'
 };
 const EDUCATIONAL_DRAFT_SPECS = {
   ...STANDARD_SPECS,
@@ -164,7 +164,7 @@ function createBoxedEpoxySeries({
     app_badge: 'Gift Set',
     tagline,
     price_from: 0.45,
-    moq: 200,
+    moq: 500,
     specs: { ...GIFT_SET_DRAFT_SPECS, ...specOverrides, 'Customization': 'Custom Boxed Set' },
     seriesSpecifications: {
       'External Box Size': externalBoxSize,
@@ -253,7 +253,7 @@ function createPlannerProduct({
     app_badge: 'Stationery',
     tagline,
     price_from: 0.65,
-    moq: 200,
+    moq: 500,
     specs: { ...STANDARD_SPECS, 'Customization': 'Custom Planner Layout' },
     plannerConfigurationNote: PLANNER_CONFIGURATION_NOTE,
     materials: [
@@ -335,7 +335,7 @@ function createAcrylicProduct({
     badge: 'ACRYLIC',
     app_badge: 'Souvenir',
     tagline,
-    moq: 200,
+    moq: 500,
     specs: { ...STANDARD_SPECS, 'Acrylic Series': nominalThickness, 'Customization': 'Custom Artwork & Shape' },
     materials: [
       { value: nominalThickness, status: 'confirmed', source: 'Linda-confirmed acrylic product classification' },
@@ -425,7 +425,7 @@ function createFridgeMagnetDraft({
     badge: 'DRAFT',
     app_badge: appBadge,
     tagline,
-    moq: 200,
+    moq: 500,
     specs: { ...STANDARD_SPECS, 'Customization': 'Project-Specific Custom Development' },
     materials: [
       { value: construction, status: 'project-specific', source: 'SSOT product naming and project-specific construction rules' }
@@ -487,7 +487,7 @@ function createMagneticStationeryDraft({ slug, sku, name, subcategory, imageFold
     badge: 'DRAFT',
     app_badge: 'Stationery',
     tagline,
-    moq: 200,
+    moq: 500,
     specs: { ...STANDARD_SPECS, 'Customization': 'Project-Specific Custom Development' },
     materials: [
       { value: projectSpecificConstruction, status: 'project-specific', source: 'SSOT project-specific specification rule' }
@@ -562,7 +562,7 @@ function createMagneticEducationalDraft({
     badge: 'DRAFT',
     app_badge: 'Education',
     tagline: draftNote,
-    moq: 200,
+    moq: 500,
     specs: { ...EDUCATIONAL_DRAFT_SPECS, 'Customization': 'Project-Specific Custom Development' },
     materials: [
       { value: 'NOT VERIFIED', status: 'needs-review', source: 'Awaiting Linda confirmation' }
@@ -635,7 +635,7 @@ function createGiftSetDraft({
     badge: 'DRAFT',
     app_badge: 'Gift Set',
     tagline: draftNote,
-    moq: 200,
+    moq: 500,
     specs: { ...GIFT_SET_DRAFT_SPECS, 'Customization': 'Project-Specific Custom Development' },
     materials: [
       { value: 'NOT VERIFIED', status: 'needs-review', source: 'Awaiting Linda confirmation' }
@@ -689,7 +689,7 @@ const PRODUCTS = [
     app_badge: 'Promotion',
     tagline: 'Lightweight, full-color fridge magnets developed for promotional campaigns, tourism programs, retail giveaways and multi-design souvenir collections.',
     price_from: 0.08,
-    moq: 200,
+    moq: 500,
     specs: { ...STANDARD_SPECS, 'Customization': 'Custom Printing' },
     materials: [
       { value: 'Protective PP film', status: 'project-specific', source: 'Report excerpt; final material stack confirmed by project' },
@@ -780,7 +780,7 @@ const PRODUCTS = [
     app_badge: 'Museum',
     tagline: 'Custom-shaped acrylic souvenir magnets for museums, tourism retail, artwork-led merchandise and premium gift programs.',
     price_from: 0.22,
-    moq: 200,
+    moq: 500,
     specs: { ...STANDARD_SPECS, 'Customization': 'Custom Shape' },
     materials: [
       { value: 'Clear acrylic', status: 'project-specific', source: 'Report excerpt; selected acrylic format confirmed by project' },
@@ -918,8 +918,8 @@ const PRODUCTS = [
     imageSku: 'epoxy-domed',
     badge: 'CUSTOM',
     specs: {
-      'MOQ': '200 pcs/sets total',
-      'Multi-design': 'Multiple designs may be combined, subject to project review.',
+      'MOQ': '500 pcs/sets per design',
+      'Multi-design': 'Each design requires at least 500 pcs/sets; quantities across designs cannot be combined to meet the MOQ.',
       'Physical Sampling': '7–10 calendar days',
       'Bulk Production': '15–20 calendar days',
       'Payment': 'Payment terms are confirmed according to order value and project requirements.'
@@ -983,8 +983,8 @@ const PRODUCTS = [
       }
     ],
     projectStandards: {
-      'MOQ': '200 pcs/sets total per product construction and manufacturing process',
-      'Multi-design options': 'Multiple designs may be combined, subject to project review',
+      'MOQ': '500 pcs/sets per design',
+      'Multi-design options': 'Each design requires at least 500 pcs/sets; quantities across designs cannot be combined to meet the MOQ.',
       'Physical Sampling': '7–10 calendar days',
       'Bulk Production': '15–20 calendar days',
       'Testing & Documentation': 'EN 71-3, REACH, RoHS 2.0 and California Proposition 65 documentation can be provided. Applicable scope is confirmed according to the final construction, intended use, age group and destination market.'
@@ -1142,7 +1142,7 @@ const PRODUCTS = [
     app_badge: 'Mascot',
     tagline: 'Precision-molded soft PVC fridge magnets for mascots, landmarks, character merchandise and promotional souvenir programs.',
     price_from: 0.18,
-    moq: 200,
+    moq: 500,
     specs: { ...STANDARD_SPECS, 'Customization': 'Custom 3D Design' },
     materials: [
       { value: 'Molded soft PVC relief', status: 'project-specific', source: 'Report excerpt' },
@@ -1202,7 +1202,7 @@ const PRODUCTS = [
     app_badge: 'Souvenir',
     tagline: 'Custom resin fridge magnets for dimensional souvenir retail, attraction gift shops and premium collectible merchandise.',
     price_from: 0.60,
-    moq: 200,
+    moq: 500,
     specs: { ...STANDARD_SPECS, 'Customization': 'Custom Mold' },
     materials: [
       { value: 'Molded resin relief', status: 'project-specific', source: 'Report excerpt' },
@@ -1370,7 +1370,7 @@ const PRODUCTS = [
     app_badge: 'Stationery',
     tagline: 'Reusable A3 weekly and monthly planning formats for stationery, office and household programs.',
     price_from: 0.65,
-    moq: 200,
+    moq: 500,
     specs: { ...STANDARD_SPECS, 'Customization': 'Custom Artwork' },
     materials: [],
     construction: [],
@@ -1473,7 +1473,7 @@ const PRODUCTS = [
     showProjectStandards: false,
     specs: {
       ...STANDARD_SPECS,
-      'MOQ': '200 pcs/sets total',
+      'MOQ': '500 pcs/sets per design',
       'Physical Sampling': '7–10 calendar days',
       'Bulk Production': '15–20 calendar days',
       'Product Size': '43 × 30 cm',
@@ -1563,7 +1563,7 @@ const PRODUCTS = [
     tagline: 'Custom magnetic EVA letters and numbers developed for early-learning, classroom, home-learning and educational merchandise programs. Soft dimensional EVA pieces with magnetic backing can be arranged on compatible magnetic surfaces for alphabet recognition, spelling, word building, number recognition, counting and interactive learning activities. Multi-color character assortments, storage-box configurations and supporting learning accessories can be reviewed according to project requirements.',
     specs: {
       ...EDUCATIONAL_DRAFT_SPECS,
-      'MOQ': '200 pcs/sets total',
+      'MOQ': '500 pcs/sets per design',
       'Physical Sampling': '7–10 calendar days',
       'Bulk Production': '15–20 calendar days',
       'Material': 'Rubber magnet + EVA foam',
@@ -1656,7 +1656,7 @@ const PRODUCTS = [
     app_badge: 'Gift Set',
     tagline: 'Boxed epoxy magnet sets for museum shops, tourism programs, licensed collections and retail-ready multi-design souvenir assortments.',
     price_from: 0.45,
-    moq: 200,
+    moq: 500,
     specs: { ...GIFT_SET_DRAFT_SPECS, 'Customization': 'Custom Layout' },
     materials: [
       { value: 'Clear epoxy dome', status: 'project-specific', source: 'Report excerpt; final dome structure confirmed by selected series' },
@@ -1743,7 +1743,7 @@ const PRODUCTS = [
     badge: 'CUSTOM',
     tagline: 'Custom magnetic souvenir sets for museum shops, tourism retail, cultural merchandise and promotional gift programs. Mixed shapes and coordinated artwork can be combined into retail-ready gift-box collections.',
     specs: {
-      'MOQ': '200 pcs/sets total',
+      'MOQ': '500 pcs/sets per design',
       'Physical Sampling': '7–10 calendar days',
       'Bulk Production': '15–20 calendar days',
       'Material': 'Rubber Magnet + Coated Paper',
@@ -1846,7 +1846,7 @@ const PRODUCTS = [
     positioning: 'Compact retail set format',
     seoTitle: 'Mini Boxed Epoxy Magnet Set | Flexible Magnet (Huizhou)',
     seoDescription: 'Request a custom Mini Boxed Epoxy Magnet Set with a 70 × 66 × 11 mm external box for three- or four-magnet retail assortments.',
-    specOverrides: { 'MOQ': '200 pcs/sets total' }
+    specOverrides: { 'MOQ': '500 pcs/sets per design' }
   }),
   createBoxedEpoxySeries({
     slug: 'slim-boxed-epoxy-magnet-set',
@@ -1899,7 +1899,7 @@ const PRODUCTS = [
     app_badge: 'Advertising',
     tagline: 'Industrial-grade magnetic vinyl with superior wind-resistance for commercial vehicle branding and professional mobile advertising.',
     price_from: 0.35,
-    moq: 200,
+    moq: 500,
     specs: { ...STANDARD_SPECS, 'Customization': 'Custom Size' },
     features: [
       { title: 'Flexible', desc: '' },
@@ -1919,7 +1919,7 @@ const PRODUCTS = [
     app_badge: 'Retail',
     tagline: 'Durable magnetic business cards providing permanent brand presence on metal surfaces for high-impact professional networking.',
     price_from: 0.06,
-    moq: 200,
+    moq: 500,
     specs: { ...STANDARD_SPECS, 'Customization': 'Custom Layout' },
     features: [
       { title: 'Premium', desc: '' },
