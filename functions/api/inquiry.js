@@ -1,4 +1,4 @@
-const REQUIRED_FIELDS = ['name', 'email', 'target_market', 'product_type', 'quantity'];
+const REQUIRED_FIELDS = ['name', 'company', 'email', 'target_market', 'product_type', 'quantity'];
 
 function jsonResponse(body, status, extraHeaders = {}) {
   return Response.json(body, {
