@@ -1,3 +1,70 @@
+// Inquiry durability: attribution is session-scoped; secrets never enter the browser.
+const FMInquiry = (() => {
+ const cleanUrl = raw => {
+  if (!raw) return '';
+  try { const u=new URL(raw,location.origin);const q=new URLSearchParams();
+   for(const key of ['p','cat','sub'])if(u.searchParams.has(key))q.set(key,u.searchParams.get(key).slice(0,200));
+   return u.origin+u.pathname+(q.size?'?'+q:'');
+  }catch{return '';}
+ };
+ const current={landing_page:cleanUrl(location.href),referrer:cleanUrl(document.referrer)};
+ const query=new URLSearchParams(location.search);
+ for(const key of ['utm_source','utm_medium','utm_campaign','utm_term','utm_content'])current[key]=(query.get(key)||'').slice(0,200);
+ let source=current;
+ try {const stored=sessionStorage.getItem('fm_inquiry_source_v1');if(stored)source=JSON.parse(stored);else sessionStorage.setItem('fm_inquiry_source_v1',JSON.stringify(current));}catch{}
+ let config=null,ready=null,widget=null;
+ function setup(form){
+  if(ready)return ready;
+  ready=(async()=>{
+   const r=await fetch('/api/inquiry-config',{cache:'no-store',signal:AbortSignal.timeout(8000)});
+   if(!r.ok)throw new Error('Inquiry configuration unavailable');
+   config=await r.json();
+   if(!config.durable)return;
+   if(!config.siteKey)throw new Error('Security verification unavailable');
+   const box=document.createElement('div');box.id='inquiryVerification';box.setAttribute('aria-label','Security verification');
+   form.querySelector('.qf-submit').before(box);
+   await new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>reject(new Error('Security verification unavailable')),12000);
+    const script=document.createElement('script');script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    script.onload=()=>{clearTimeout(timer);resolve();};script.onerror=()=>{clearTimeout(timer);reject(new Error('Security verification unavailable'));};
+    document.head.append(script);
+   });
+   const verificationFailed=()=>{const node=document.getElementById('formSuccess');if(node){node.style.display='block';node.className='form-success show form-error';node.dataset.verificationError='true';node.textContent='Security verification could not finish. Please refresh or try another browser or network. Your entries have been kept. You can also email sales08@flexiblemagnetchina.com.';}};
+   widget=window.turnstile.render(box,{sitekey:config.siteKey,action:'inquiry',size:window.matchMedia('(max-width: 480px)').matches?'compact':'normal',
+    'error-callback':code=>{box.setAttribute('data-verification-error',String(code).slice(0,20));verificationFailed();return true;},
+    'timeout-callback':verificationFailed,
+    callback:()=>{const node=document.getElementById('formSuccess');if(node?.dataset.verificationError==='true'){delete node.dataset.verificationError;node.style.display='none';}}
+   });
+  })();
+  ready.catch(()=>{const node=document.getElementById('formSuccess');if(node){node.style.display='block';node.className='form-success show form-error';node.textContent='The inquiry form is temporarily unavailable. Please email sales08@flexiblemagnetchina.com.';}});
+  return ready;
+ }
+ async function prepare(form,data){
+  await setup(form);
+  if(!config.durable)return {};
+  for(const [key,value]of Object.entries(source))data.set(key,String(value).slice(0,1000));
+  data.set('page_url',cleanUrl(location.href));
+  const token=window.turnstile.getResponse(widget);
+  if(!token)throw Object.assign(new Error('Please complete the security verification.'),{code:'SECURITY_REQUIRED'});
+  data.set('cf-turnstile-response',token);
+  const signatureData=[];
+  for(const [k,v]of data.entries())if(k!=='cf-turnstile-response')signatureData.push([k,typeof v==='string'?v:[v.name,v.size,v.lastModified]]);
+  const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(signatureData)));
+  const signature=Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,'0')).join('');
+  let state=form.fmInquiryState;
+  try {if(!state)state=JSON.parse(sessionStorage.getItem('fm_inquiry_pending')||'null');}catch{}
+  if(!state||state.signature!==signature)state={id:crypto.randomUUID(),signature};
+  form.fmInquiryState=state;
+  try{sessionStorage.setItem('fm_inquiry_pending',JSON.stringify(state));}catch{}
+  return {'Idempotency-Key':state.id};
+ }
+ function reset(form,success){
+  try{if(config?.durable&&widget!==null)window.turnstile.reset(widget);}catch{}
+  if(success){delete form.fmInquiryState;try{sessionStorage.removeItem('fm_inquiry_pending');}catch{}}
+ }
+ return {setup,prepare,reset,isDurable:()=>config?.durable===true};
+})();
+
 /* ============================================
    Flexible Magnet (Huizhou).com — main.js
    Render logic: categories, product cards, product detail, inquiry form
@@ -1353,6 +1420,7 @@ async function renderProductDetail() {
 function setupInquiryForm() {
   const form = document.getElementById('inquiryForm');
   if (!form || form.dataset.bound === 'true') return;
+  FMInquiry.setup(form);
   form.dataset.bound = 'true';
 
   const productSlug = getQuery('p');
@@ -1367,6 +1435,7 @@ function setupInquiryForm() {
     if (!form.reportValidity()) return;
 
     const submitButton = form.querySelector('button[type="submit"]');
+    if (submitButton?.disabled) return;
     const success = document.getElementById('formSuccess');
     const endpoint = form.dataset.submitEndpoint || '/api/inquiry';
 
@@ -1386,10 +1455,11 @@ function setupInquiryForm() {
     try {
       const formData = new FormData(form);
       formData.set('source_language', SITE_LANGUAGE);
+      const inquiryHeaders = await FMInquiry.prepare(form, formData);
       const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
-        headers: { Accept: 'application/json' },
+        headers: { Accept: 'application/json', ...inquiryHeaders },
         signal: controller.signal
       });
       let result = {};
@@ -1399,6 +1469,8 @@ function setupInquiryForm() {
         throw new Error('The inquiry service returned an invalid response.');
       }
       if (!response.ok || result.success !== true) throw new Error(result.message || `Submission failed with HTTP ${response.status}.`);
+      if (FMInquiry.isDurable() && (result.recorded !== true || !/^[a-f0-9-]{36}$/i.test(result.inquiry_id || ''))) throw new Error('Invalid inquiry receipt.');
+      FMInquiry.reset(form, true);
       form.reset();
       const fileName = document.getElementById('qfFileName');
       if (fileName) fileName.textContent = translateUi('No file selected');
@@ -1407,6 +1479,9 @@ function setupInquiryForm() {
         success.innerHTML = SITE_LANGUAGE === 'es'
           ? '<strong>Gracias: los datos de su proyecto se han enviado.</strong><br>Nuestro equipo revisará los requisitos y responderá por correo electrónico.'
           : '<strong>Thank you — your project brief has been sent.</strong><br>Our team will review your requirements and reply by email.';
+        if (result.recorded === true) {
+          success.textContent = (SITE_LANGUAGE === 'es' ? 'Gracias. Hemos recibido su consulta. Referencia: ' : 'Thank you — we have received your inquiry. Reference: ') + result.inquiry_id;
+        }
         success.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
       if (typeof gtag === 'function') gtag('event', 'inquiry_form_submit');
@@ -1420,9 +1495,11 @@ function setupInquiryForm() {
           : (SITE_LANGUAGE === 'es'
             ? '<strong>No se ha podido enviar el formulario.</strong><br>El servidor no confirmó la entrega. Inténtelo de nuevo, escriba a <a href="mailto:sales08@flexiblemagnetchina.com">sales08@flexiblemagnetchina.com</a> o contáctenos por WhatsApp.'
             : '<strong>We could not send the form.</strong><br>The server did not confirm delivery. Please try again, email <a href="mailto:sales08@flexiblemagnetchina.com">sales08@flexiblemagnetchina.com</a>, or contact us on WhatsApp.');
+        if (error.code === 'SECURITY_REQUIRED') success.textContent = 'Please complete the security verification before sending. Your entries have been kept. If verification does not appear, please email sales08@flexiblemagnetchina.com.';
         success.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     } finally {
+      FMInquiry.reset(form, false);
       window.clearTimeout(requestTimeout);
       if (submitButton) {
         submitButton.disabled = false;

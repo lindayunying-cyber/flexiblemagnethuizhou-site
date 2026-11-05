@@ -125,6 +125,17 @@ export async function onRequest({ request, env }) {
       );
     }
 
+    if (env.INQUIRY_MODE === 'durable') {
+      if (!env.INQUIRY_SERVICE || !env.INQUIRY_INGEST_TOKEN) {
+        return jsonResponse({success:false,message:'Inquiry service is not configured.'},503);
+      }
+      const headers = new Headers(request.headers);
+      headers.set('Authorization', 'Bearer ' + env.INQUIRY_INGEST_TOKEN);
+      headers.set('X-Visitor-IP', request.headers.get('CF-Connecting-IP') || 'unknown');
+      return await env.INQUIRY_SERVICE.fetch(new Request('https://inquiry.internal/submit', {
+        method:'POST', headers, body:request.body, duplex:'half'
+      }));
+    }
     return await handlePost(request, env);
   } catch (error) {
     const errorName = error && typeof error.name === 'string' ? error.name : 'Error';
